@@ -3,7 +3,7 @@ package com.deew.bs808;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-import ml.that.pigeon.ServiceManager;
+import com.deew.jt808.ServiceManager;
 
 public class MainActivity extends AppCompatActivity {
 

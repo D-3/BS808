@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="ml.that.pigeon">
+          package="com.deew.jt808">
 
   <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -10,12 +10,9 @@
       android:supportsRtl="true">
 
     <service
-        android:name=".MessageService"
+        android:name="com.deew.jt808.MessageService"
         android:enabled="true"
         android:exported="true">
-      <intent-filter>
-        <action android:name="ml.that.pigeon.MessageService.START"/>
-      </intent-filter>
     </service>
 
   </application>
