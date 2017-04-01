@@ -1,6 +1,5 @@
 package com.deew.jt808.conn;
 
-import com.deew.jt808.auth.AdvancedAuthentication;
 import com.deew.jt808.filter.MessageFilter;
 import com.deew.jt808.msg.Message;
 import com.deew.jt808.util.LogUtils;
@@ -61,7 +60,18 @@ public class Connection {
   private MessageReader mReader;
   private MessageWriter mWriter;
 
-  private boolean mConnected     = false;
+  private static final byte CONNECTED = 0;
+  private static final byte CONNECTING = 1;
+  private static final byte DISCONNECTING = 2;
+  private static final byte DISCONNECTED = 3;
+  private static final byte CLOSED = 4;
+
+  private byte mConnState = DISCONNECTED;
+
+  private Object	conLock = new Object();  	// Used to synchronize connection state
+
+//  private boolean mConnected     = false;
+
   // Flag that indicates if the client is currently authenticated with the server
   private boolean mAuthenticated = false;
 
@@ -89,71 +99,95 @@ public class Connection {
   }
 
   /**
-   * Establishes a connection to the JT/T808 server and performs an automatic login only if the
-   * previous connection state was logged (authenticated). It basically creates and maintains a
-   * connection to the server.
-   * <p>
-   * Listeners will be preserved from a previous connection.
+   * Establishes a connection to the JT/T808 server in a background thread
    */
   public void connect() throws IOException {
-    mSocket = new Socket(mConfig.getHost(), mConfig.getPort());
-    mSocketClosed = false;
-    initConnection();
+    synchronized (conLock){
+      if(isDisconnected()){
+        mConnState = CONNECTING;
+        ConnectBG connectBg = new ConnectBG(this);
+        connectBg.start();
+      }else{
+        if(isClosed()){
+          throw new IllegalStateException("connection is closed");
+        }
+        else if(isConnecting()){
+          throw new IllegalStateException("connection is connecting");
+        }
+        else if(isConnected()){
+          throw new IllegalStateException("connection is connected");
+        }
+        else if(isDisconnecting()){
+          throw new IllegalStateException("connection is disconnecting");
+        }
+      }
+    }
   }
 
   /**
    * Closes the connection. The Connection can still be used for connecting to the server again.
    */
   public void disconnect(){
-    if(mReader != null){
-      mReader.shutdown();
-      mReader = null;
-    }
-    if(mWriter != null){
-      mWriter.shutdown();
-      mWriter = null;
-    }
-    if(!mSocketClosed){
-      try {
-        mSocket.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }finally {
-        mSocket = null;
-        mSocketClosed = true;
+    synchronized (conLock){
+      if(!isDisconnected()){
+        if()
+        if(mReader != null){
+          mReader.shutdown();
+          mReader = null;
+        }
+        if(mWriter != null){
+          mWriter.shutdown();
+          mWriter = null;
+        }
+        mConnState = DISCONNECTED;
       }
     }
   }
 
-  /**
-   * Logs in to the server using the strongest authentication mode supported by the server. If the
-   * server supports advanced authentication then the client will be authenticated using advanced if
-   * not basic authentication will be tried. If more than five seconds (default timeout) elapses in
-   * each step of the authentication process without a reply from the server, or if an error
-   * occurs.
-   * <p>
-   * Before logging in (i.e. authenticate) to the server the connection must be connected.
-   *
-   * @param auth the authentication code
-   */
-  public synchronized void login(String auth) {
-    if (!isConnected()) {
-      throw new IllegalStateException("Not connected to server.");
-    }
-    if (isAuthenticated()) {
-      throw new IllegalStateException("Already logged in to server.");
-    }
-
-    // TODO: 2016/10/28 choose from basic and advanced authentication
-    // Authenticate using basic
-    boolean result = new AdvancedAuthentication(this).authenticate(auth);
-
-    if (result == true) {
-      mAuthenticated = true;
-    } else {
-      mAuthenticated = false;
+  public void close(){
+    synchronized (conLock){
+      if(){
+        try {
+          mSocket.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }finally {
+          mSocket = null;
+          mSocketClosed = true;
+        }
+      }
     }
   }
+
+//  /**
+//   * Logs in to the server using the strongest authentication mode supported by the server. If the
+//   * server supports advanced authentication then the client will be authenticated using advanced if
+//   * not basic authentication will be tried. If more than five seconds (default timeout) elapses in
+//   * each step of the authentication process without a reply from the server, or if an error
+//   * occurs.
+//   * <p>
+//   * Before logging in (i.e. authenticate) to the server the connection must be connected.
+//   *
+//   * @param auth the authentication code
+//   */
+//  public synchronized void login(String auth) {
+//    if (!isConnected()) {
+//      throw new IllegalStateException("Not connected to server.");
+//    }
+//    if (isAuthenticated()) {
+//      throw new IllegalStateException("Already logged in to server.");
+//    }
+//
+//    // TODO: 2016/10/28 choose from basic and advanced authentication
+//    // Authenticate using basic
+//    boolean result = new AdvancedAuthentication(this).authenticate(auth);
+//
+//    if (result == true) {
+//      mAuthenticated = true;
+//    } else {
+//      mAuthenticated = false;
+//    }
+//  }
 
   public void sendMessage(Message msg) {
     if (!isConnected()) {
@@ -183,22 +217,44 @@ public class Connection {
     return mOutput;
   }
 
-  /**
-   * Returns true if currently connected to the JT/T808 server.
-   *
-   * @return true if connected
-   */
+  public boolean isConnecting() {
+    synchronized (conLock){
+      return mConnState == CONNECTING;
+    }
+  }
+
   public boolean isConnected() {
-    return mConnected;
+    synchronized (conLock){
+      return mConnState == CONNECTED;
+    }
   }
 
-  public boolean isAuthenticated() {
-    return mAuthenticated;
+  public boolean isDisconnecting() {
+    synchronized (conLock){
+      return mConnState == DISCONNECTING;
+    }
   }
 
-  public boolean isSocketClosed() {
-    return mSocketClosed;
+  public boolean isDisconnected() {
+    synchronized (conLock){
+      return mConnState == DISCONNECTED;
+    }
   }
+
+  public boolean isClosed() {
+    synchronized (conLock){
+      return mConnState == CLOSED;
+    }
+  }
+
+
+//  public boolean isAuthenticated() {
+//    return mAuthenticated;
+//  }
+
+//  public boolean isSocketClosed() {
+//    return mSocketClosed;
+//  }
 
   /**
    * Creates a new message collector for this connection. A message filter determines which messages
@@ -305,75 +361,126 @@ public class Connection {
     return mSndListeners;
   }
 
-  /** Initializes the connection by creating a message reader and writer. */
-  private void initConnection() throws IOException {
-    boolean isFirstInit = (mReader == null || mWriter == null);
 
-    // Set the input stream and output stream instance variables
-    try {
-      mInput = mSocket.getInputStream();
-      mOutput = mSocket.getOutputStream();
-    } catch (IOException ioe) {
-      // An exception occurred in setting up the connection. Make sure we shut down the input
-      // stream and output stream and close the socket
-      if (mWriter != null) {
-        mWriter.shutdown();
-        mWriter = null;
-      }
-      if (mReader != null) {
-        mReader.shutdown();
-        mReader = null;
-      }
-      if (mInput != null) {
-        try {
-          mInput.close();
-        } catch (IOException e) {
-          // Ignore
-        }
-        mInput = null;
-      }
-      if (mOutput != null) {
-        try {
-          mOutput.close();
-        } catch (IOException e) {
-          // Ignore
-        }
-        mOutput = null;
-      }
-      if (mSocket != null) {
-        try {
-          mSocket.close();
-        } catch (IOException e) {
-          // Ignore
-        }
-        mSocket = null;
-      }
+  private class ConnectBG implements Runnable {
+    Connection mConnection;
+    Thread mConnectThread;
 
-      mConnected = false;
+    ConnectBG(Connection connection){
+      mConnection = connection;
+      mConnectThread = new Thread(this, "Connect thread");
+    };
 
-      throw ioe;
+    void start(){
+      mConnectThread.start();
     }
 
-    if (isFirstInit) {
-      mWriter = new MessageWriter(this);
-      mReader = new MessageReader(this);
-    } else {
-      mWriter.init();
-      mReader.init();
+    @Override
+    public void run() {
+      String host = mConnection.getConfig().getHost();
+      int port = mConnection.getConfig().getPort();
+      try {
+        Socket socket = new Socket(host, port);
+        mConnection.connectComplete(socket);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
-
-    // Start the message writer
-    mWriter.startup();
-    // Start the message reader, the startup() method will block until we get a packet from server
-    mReader.startup();
-
-    // Make note of the fact that we're now connected
-    mConnected = true;
-
-    // TODO: 2016/11/1 move this to when logged in
-    // Start keep alive process
-    mWriter.keepAlive();
   }
+
+  private void connectComplete(Socket socket) throws IOException{
+    synchronized (conLock){
+      mSocket = socket;
+
+      boolean isFirstInit = (mReader == null || mWriter == null);
+
+      // Set the input stream and output stream instance variables
+      try {
+        mInput = mSocket.getInputStream();
+        mOutput = mSocket.getOutputStream();
+      } catch (IOException ioe) {
+        // An exception occurred in setting up the connection. Make sure we shut down the input
+        // stream and output stream and close the socket
+        if (mWriter != null) {
+          mWriter.shutdown();
+          mWriter = null;
+        }
+        if (mReader != null) {
+          mReader.shutdown();
+          mReader = null;
+        }
+        if (mInput != null) {
+          try {
+            mInput.close();
+          } catch (IOException e) {
+            // Ignore
+          }
+          mInput = null;
+        }
+        if (mOutput != null) {
+          try {
+            mOutput.close();
+          } catch (IOException e) {
+            // Ignore
+          }
+          mOutput = null;
+        }
+        if (mSocket != null) {
+          try {
+            mSocket.close();
+          } catch (IOException e) {
+            // Ignore
+          }
+          mSocket = null;
+        }
+
+        mConnState = CLOSED;
+
+        throw ioe;
+      }
+
+      if (isFirstInit) {
+        mWriter = new MessageWriter(this);
+        mReader = new MessageReader(this);
+      } else {
+        mWriter.init();
+        mReader.init();
+      }
+
+      // Start the message writer
+      mWriter.startup();
+      // Start the message reader, the startup() method will block until we get a packet from server
+      mReader.startup();
+
+      // TODO: 2016/11/1 move this to when logged in
+      // Start keep alive process
+      mWriter.keepAlive();
+
+      // Make note of the fact that we're now connected
+      mConnState = CONNECTED;
+    }
+  }
+
+
+  private class DisconnectBG implements Runnable {
+    Connection mConnection;
+    Thread mConnectThread;
+
+    DisconnectBG(Connection connection){
+      mConnection = connection;
+      mConnectThread = new Thread(this, "Disconnect thread");
+    };
+
+    void start(){
+      mConnectThread.start();
+    }
+
+    @Override
+    public void run() {
+      mConnection.getSocket
+    }
+  }
+
 
   /** A wrapper class to associate a message filter with a listener. */
   static class ListenerWrapper {

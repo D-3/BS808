@@ -153,6 +153,7 @@ class MessageWriter {
     } catch (IOException ioe) {
       // TODO: 10/24/2016 the exception can be ignored if the connection is done
       ioe.printStackTrace();
+      // TODO 当连接没有断开时，断开连接
     }
   }
 

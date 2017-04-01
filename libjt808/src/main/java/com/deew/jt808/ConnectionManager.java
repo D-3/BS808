@@ -6,22 +6,24 @@ import android.util.Log;
 import com.deew.jt808.conn.Connection;
 import com.deew.jt808.conn.ConnectionConfiguration;
 import com.deew.jt808.conn.MessageListener;
-import com.deew.jt808.filter.MessageIdFilter;
 import com.deew.jt808.msg.LocationMessage;
 import com.deew.jt808.msg.Message;
 import com.deew.jt808.msg.RegisterReply;
 import com.deew.jt808.msg.RegisterRequest;
 import com.deew.jt808.util.LogUtils;
-import com.deew.jt808.util.TimeUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import com.deew.jt808.filter.MessageIdFilter;
+import com.deew.jt808.util.TimeUtils;
+
 /**
  * This class is to manage the JT/T808 connection between client and server.
  *
+ * @author That Mr.L (thatmr.l@gmail.com)
  */
 public class ConnectionManager {
 
