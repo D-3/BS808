@@ -47,7 +47,7 @@ public class AuthenticateRequest extends Message {
     @Override
     public AuthenticateRequest build() {
       try {
-        this.body = this.authCode.getBytes("ascii");
+        this.body = this.authCode.getBytes("GBK");
       } catch (UnsupportedEncodingException uee) {
         Log.e(TAG, "build: Encode message body failed.", uee);
       }

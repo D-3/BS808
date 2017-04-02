@@ -75,6 +75,7 @@ class MessageWriter {
    * written to the server.
    */
   public void shutdown() {
+    Log.d(TAG, "shutdown writer");
     mDone = true;
     synchronized (mQueue) {
       mQueue.notifyAll();
@@ -151,9 +152,9 @@ class MessageWriter {
       // Delete the queue contents (hopefully nothing is left)
       mQueue.clear();
     } catch (IOException ioe) {
-      // TODO: 10/24/2016 the exception can be ignored if the connection is done
       ioe.printStackTrace();
-      // TODO 当连接没有断开时，断开连接
+      //TODO   this solution is not good
+      mConnection.shutDown();
     }
   }
 
@@ -196,9 +197,11 @@ class MessageWriter {
   private class KeepAliveTask implements Runnable {
 
     private int delay;
+    private HeartbeatMessage.Builder mHearbeatBuilder;
 
     public KeepAliveTask(int delay) {
       this.delay = delay;
+      mHearbeatBuilder = new HeartbeatMessage.Builder();
     }
 
     @Override
@@ -214,7 +217,7 @@ class MessageWriter {
         synchronized (mOutput) {
           // Send heartbeat if no packet has been sent to the server for a given time
           if (System.currentTimeMillis() - mLastActive >= delay * 1000L) {
-            sendMessage(new HeartbeatMessage.Builder().build());
+            sendMessage(mHearbeatBuilder.build());
           }
         }
 

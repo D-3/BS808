@@ -64,6 +64,7 @@ class MessageReader {
 
   /** Shuts the message reader down. */
   public void shutdown() {
+    Log.d(TAG, "shutdown reader");
     mDone = true;
   }
 
@@ -84,8 +85,12 @@ class MessageReader {
       }
     } catch (IOException e) {
       e.printStackTrace();
+
+      //TODO   this solution is not good
+      mConnection.shutDown();
+    } finally {
+
     }
-    // TODO: 10/24/2016 implement this method
   }
 
   /**

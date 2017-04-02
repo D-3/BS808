@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">BS808</string>
+
+
+    <string name="btn_regsiter">注册设备</string>
+    <string name="btn_auth">设备鉴权</string>
+    <string name="btn_location">上报设备位置</string>
+    <string name="btn_connect">连接服务器</string>
+    <string name="btn_close">关闭连接</string>
 </resources>

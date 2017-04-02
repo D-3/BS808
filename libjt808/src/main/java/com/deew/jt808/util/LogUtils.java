@@ -8,7 +8,7 @@ public class LogUtils {
 
   @SuppressWarnings("unchecked")
   public static String makeTag(Class cls) {
-    return "Pigeon_" + cls.getSimpleName();
+    return "JT808_" + cls.getSimpleName();
   }
 
 }

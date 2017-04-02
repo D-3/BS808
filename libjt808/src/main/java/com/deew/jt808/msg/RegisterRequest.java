@@ -65,12 +65,12 @@ public class RegisterRequest extends Message {
     private byte   plateColor = Jtt415Constants.PLATE_COLOR_TEST;
     private String plateText  = EMPTY_PLATE_TEXT;
 
-    public Builder provId(byte id) {
+    public Builder provId(short id) {
       this.provId = id;
       return this;
     }
 
-    public Builder cityId(byte id) {
+    public Builder cityId(short id) {
       this.cityId = id;
       return this;
     }
@@ -141,7 +141,7 @@ public class RegisterRequest extends Message {
                                            this.cltModel,
                                            this.cltId,
                                            IntegerUtils.asBytes(this.plateColor),
-                                           this.plateText.getBytes("gbk"));
+                                           this.plateText.getBytes("GBK"));
       } catch (UnsupportedEncodingException uee) {
         Log.e(TAG, "build: Encode message body failed.", uee);
       }

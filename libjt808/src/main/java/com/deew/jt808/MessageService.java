@@ -50,7 +50,7 @@ public class MessageService extends Service {
     super.onCreate();
 
     mPrefs = getSharedPreferences(ClientConstants.PREF_FILE_NAME, MODE_PRIVATE);
-    mConnMgr = new ConnectionManager(this);
+//    mConnMgr = new ConnectionManager(this);
 
     start();
   }
@@ -100,7 +100,7 @@ public class MessageService extends Service {
 
   private void start() {
     Log.d(TAG, "start: ");
-    mConnMgr.connect();
+//    mConnMgr.connect();
   }
 
   private void stop() {
