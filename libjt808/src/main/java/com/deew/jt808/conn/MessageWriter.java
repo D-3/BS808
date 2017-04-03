@@ -90,7 +90,7 @@ class MessageWriter {
     // Schedule a keep-alive task to run if the feature is enabled, will write out a empty
     // message each time it runs to keep the TCP/IP connection open
     // TODO: 2016/11/1 read from preferences
-    int keepAliveInterval = 10;
+    int keepAliveInterval = 60;
     if (keepAliveInterval > 0) {
       KeepAliveTask task = new KeepAliveTask(keepAliveInterval);
       mKeepAliveThread = new Thread(task);
@@ -108,15 +108,15 @@ class MessageWriter {
    */
   public void sendMessage(Message msg) {
     if (!mDone) {
-      try {
-        for (Packet packet : msg.getPackets()) {
-          mQueue.put(packet);
-        }
-      } catch (InterruptedException ie) {
-        ie.printStackTrace();
-        return;
-      }
       synchronized (mQueue) {
+        try {
+          for (Packet packet : msg.getPackets()) {
+            mQueue.put(packet);
+          }
+        } catch (InterruptedException ie) {
+          ie.printStackTrace();
+          return;
+        }
         mQueue.notifyAll();
       }
     }

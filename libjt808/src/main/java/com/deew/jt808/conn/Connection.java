@@ -52,6 +52,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * can use {@link #connect()} to manually connect to the server.
  *
  */
+
+// TODO: 2017/4/3  Add auto reconnect
 public class Connection {
 
   private static final String TAG = LogUtils.makeTag(Connection.class);
@@ -69,11 +71,12 @@ public class Connection {
 
   private static final byte CONNECTED = 0;
   private static final byte CONNECTING = 1;
-  private static final byte DISCONNECTING = 2;
-  private static final byte DISCONNECTED = 3;
-  private static final byte CLOSED = 4;
+//  private static final byte DISCONNECTING = 2;
+//  private static final byte DISCONNECTED = 3;
+  private static final byte CLOSEING = 4;
+  private static final byte CLOSED = 5;
 
-  private byte mConnState = DISCONNECTED;
+  private byte mConnState = CLOSED;
 
   private Object	conLock = new Object();  	// Used to synchronize connection state
 
@@ -134,15 +137,21 @@ public class Connection {
     }
   }
 
-  public boolean isDisconnecting() {
-    synchronized (conLock){
-      return mConnState == DISCONNECTING;
-    }
-  }
+//  public boolean isDisconnecting() {
+//    synchronized (conLock){
+//      return mConnState == DISCONNECTING;
+//    }
+//  }
+//
+//  public boolean isDisconnected() {
+//    synchronized (conLock){
+//      return mConnState == DISCONNECTED;
+//    }
+//  }
 
-  public boolean isDisconnected() {
+  public boolean isClosing() {
     synchronized (conLock){
-      return mConnState == DISCONNECTED;
+      return mConnState == CLOSEING;
     }
   }
 
@@ -169,12 +178,17 @@ public class Connection {
   public void connect() throws IllegalStateException{
     synchronized (conLock){
       Log.d(TAG, "connect called");
-      if(isDisconnected()){
+//      if(isDisconnected()){
+//        mConnState = CONNECTING;
+//        ConnectBG connectBg = new ConnectBG();
+//        connectBg.start();
+//      }else if(isClosed()){
+//        throw new IllegalStateException("connection is closed");
+//      }
+      if(isClosed()){
         mConnState = CONNECTING;
         ConnectBG connectBg = new ConnectBG();
         connectBg.start();
-      }else if(isClosed()){
-        throw new IllegalStateException("connection is closed");
       }
       else if(isConnecting()){
         throw new IllegalStateException("connection is connecting");
@@ -182,7 +196,10 @@ public class Connection {
       else if(isConnected()){
         throw new IllegalStateException("connection is connected");
       }
-      else if(isDisconnecting()){
+//      else if(isDisconnecting()){
+//        throw new IllegalStateException("connection is disconnecting");
+//      }
+      else if(isClosing()){
         throw new IllegalStateException("connection is disconnecting");
       }
     }
@@ -271,7 +288,7 @@ public class Connection {
    * disconnect the connection. The Connection can still be used for connecting to the server again.
    */
   private void disconnect(){
-    //TODO complete disconnect logic
+    //TODO There is no disconnect now. To be added in the future
   }
 
 
@@ -366,6 +383,7 @@ public class Connection {
   }
 
   /**
+   * Send a message to server. Remember Checking if connected first
    *
    * @param msg
    */
